@@ -1,0 +1,2 @@
+module Pretty.Core
+  () where

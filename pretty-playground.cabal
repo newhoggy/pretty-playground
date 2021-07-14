@@ -1,0 +1,86 @@
+cabal-version: 2.2
+
+name:                   pretty-playground
+version:                0.6.3.0
+synopsis:               Primitive functions and data types
+description:            Primitive functions and data types.
+category:               Data
+stability:              Experimental
+homepage:               http://github.com/haskell-works/pretty-playground#readme
+bug-reports:            https://github.com/haskell-works/pretty-playground/issues
+author:                 John Ky
+maintainer:             newhoggy@gmail.com
+copyright:              2016-2021 John Ky
+license:                BSD-3-Clause
+tested-with:            GHC == 9.0.1, GHC == 8.10.4, GHC == 8.8.4, GHC == 8.6.5
+build-type:             Simple
+
+source-repository head
+  type:                 git
+  location:             https://github.com/haskell-works/pretty-playground
+
+flag bounds-checking-enabled
+  description:          Enable bmi2 instruction set
+  manual:               False
+  default:              False
+
+common base                       { build-depends: base                       >= 4.11       && < 5      }
+
+common aeson                      { build-depends: aeson                      >= 1.5.6.0    && < 1.6    }
+common ansi-wl-pprint             { build-depends: ansi-wl-pprint             >= 0.6.9      && < 0.7    }
+common bytestring                 { build-depends: bytestring                 >= 0.9        && < 0.11   }
+common directory                  { build-depends: directory                  >= 1.2        && < 1.4    }
+common doctest                    { build-depends: doctest                    >= 0.16.2     && < 0.19   }
+common doctest-discover           { build-depends: doctest-discover           >= 0.2        && < 0.3    }
+common hedgehog                   { build-depends: hedgehog                   >= 1.0        && < 1.1    }
+common hspec                      { build-depends: hspec                      >= 2.4        && < 2.8    }
+common hw-hspec-hedgehog          { build-depends: hw-hspec-hedgehog          >= 0.1        && < 0.2    }
+common text                       { build-depends: text                       >= 1.2.4.1    && < 1.3    }
+common unordered-containers       { build-depends: unordered-containers       >= 0.2.14.0   && < 0.3    }
+common vector                     { build-depends: vector                     >= 0.12.3.0   && < 0.13   }
+
+common pretty-playground
+  build-depends:        pretty-playground
+
+common config
+  default-language:     Haskell2010
+  ghc-options:          -Wall -O2 -msse4.2
+  if flag(bounds-checking-enabled)
+    cpp-options:        -DBOUNDS_CHECKING_ENABLED
+
+library
+  import:               base, config
+                      , ansi-wl-pprint
+                      , bytestring
+  exposed-modules:      Pretty.Core
+  other-modules:        Paths_pretty_playground
+  autogen-modules:      Paths_pretty_playground
+  hs-source-dirs:       src
+
+test-suite pretty-playground-test
+  import:               base, config
+                      , aeson
+                      , ansi-wl-pprint
+                      , bytestring
+                      , directory
+                      , hedgehog
+                      , hspec
+                      , pretty-playground
+  type:                 exitcode-stdio-1.0
+  main-is:              Spec.hs
+  other-modules:        Pretty.CoreSpec
+  hs-source-dirs:       test
+  ghc-options:          -threaded -rtsopts -with-rtsopts=-N
+  build-tool-depends:   hspec-discover:hspec-discover
+
+executable pretty-playground
+  import:               base, config
+                      , aeson
+                      , ansi-wl-pprint
+                      , bytestring
+                      , text
+                      , unordered-containers
+                      , vector
+  main-is:              Main.hs
+  hs-source-dirs:       app
+  ghc-options:          -threaded -rtsopts -with-rtsopts=-N
