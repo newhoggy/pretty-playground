@@ -27,7 +27,7 @@ flag bounds-checking-enabled
 common base                       { build-depends: base                       >= 4.11       && < 5      }
 
 common aeson                      { build-depends: aeson                      >= 1.5.6.0    && < 1.6    }
-common ansi-wl-pprint             { build-depends: ansi-wl-pprint             >= 0.6.9      && < 0.7    }
+common prettyprinter              { build-depends: prettyprinter              >= 1.7        && < 1.8    }
 common bytestring                 { build-depends: bytestring                 >= 0.9        && < 0.11   }
 common directory                  { build-depends: directory                  >= 1.2        && < 1.4    }
 common doctest                    { build-depends: doctest                    >= 0.16.2     && < 0.19   }
@@ -50,7 +50,7 @@ common config
 
 library
   import:               base, config
-                      , ansi-wl-pprint
+                      , prettyprinter
                       , bytestring
   exposed-modules:      Pretty.Core
   other-modules:        Paths_pretty_playground
@@ -60,7 +60,7 @@ library
 test-suite pretty-playground-test
   import:               base, config
                       , aeson
-                      , ansi-wl-pprint
+                      , prettyprinter
                       , bytestring
                       , directory
                       , hedgehog
@@ -76,7 +76,7 @@ test-suite pretty-playground-test
 executable pretty-playground
   import:               base, config
                       , aeson
-                      , ansi-wl-pprint
+                      , prettyprinter
                       , bytestring
                       , text
                       , unordered-containers

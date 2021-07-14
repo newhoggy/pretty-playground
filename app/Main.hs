@@ -9,66 +9,67 @@ import Data.Aeson (Value(..))
 import Data.Bool (bool)
 import Data.Either (fromRight)
 import Data.Text (Text)
-import Text.PrettyPrint.ANSI.Leijen (Doc)
+import Prettyprinter (Doc, LayoutOptions(..), layoutSmart, PageWidth(..))
+import Prettyprinter.Render.Text (renderStrict)
 
 import qualified Data.Aeson as J
 import qualified Data.HashMap.Lazy as HM
+import qualified Data.Text.IO as T
 import qualified Data.Vector as DV
 import qualified System.Environment as IO
-import qualified System.IO as IO
-import qualified Text.PrettyPrint.ANSI.Leijen as PP
+import qualified Prettyprinter as PP
 
-intercalate :: Doc -> [Doc] -> Doc
+intercalate :: Doc ann -> [Doc ann] -> Doc ann
 intercalate d as = PP.flatAlt (intercalateGenerous d as) (intercalateCompact d as)
 
-intercalateCompact :: Doc -> [Doc] -> Doc
+intercalateCompact :: Doc ann -> [Doc ann] -> Doc ann
 intercalateCompact _ [a] = a
 intercalateCompact d (a:as) = a <> d <> PP.space <> intercalateCompact d as
 intercalateCompact _ [] = mempty
 
-intercalateGenerous :: Doc -> [Doc] -> Doc
+intercalateGenerous :: Doc ann -> [Doc ann] -> Doc ann
 intercalateGenerous _ [a] = a
 intercalateGenerous d (a:as) = a <> PP.line <> d <> PP.space <> intercalateGenerous d as
 intercalateGenerous _ [] = mempty
 
-encloseSep2 :: Doc -> Doc -> Doc -> [Doc] -> Doc
+encloseSep2 :: Doc ann -> Doc ann -> Doc ann -> [Doc ann] -> Doc ann
 encloseSep2 lt rt sep ds = PP.align $ PP.flatAlt (encloseSepGenerous lt rt sep ds) (encloseSepCompact lt rt sep ds)
 
-encloseSepCompact :: Doc -> Doc -> Doc -> [Doc] -> Doc
+encloseSepCompact :: Doc ann -> Doc ann -> Doc ann -> [Doc ann] -> Doc ann
 encloseSepCompact lt rt sep ds = case ds of
   []  -> lt <> rt
   [d] -> lt <> d <> rt
   _   -> lt <> intercalate sep ds <> rt
 
-encloseSepGenerous :: Doc -> Doc -> Doc -> [Doc] -> Doc
+encloseSepGenerous :: Doc ann -> Doc ann -> Doc ann -> [Doc ann] -> Doc ann
 encloseSepGenerous lt rt sep ds = case ds of
   []  -> lt <> rt
   [d] -> lt <> PP.space <> d <> PP.line <> rt
   _   -> mconcat (zipWith (<>) ((lt <> PP.space):repeat (PP.line <> sep <> PP.space)) ds) <> PP.line <> rt
 
-renderEntry :: (Text, Value) -> Doc
-renderEntry kv = PP.flatAlt (renderEntryGenerous kv) (renderEntryCompact kv)
+renderEntry :: (Text, Value) -> Doc ann
+renderEntry kv = PP.group $ PP.flatAlt (renderEntryGenerous kv) (renderEntryCompact kv)
 
-renderEntryCompact :: (Text, Value) -> Doc
-renderEntryCompact (k, v) = PP.group $ PP.text (show k) <> PP.text ":" <> PP.space <> render v
+renderEntryCompact :: (Text, Value) -> Doc ann
+renderEntryCompact (k, v) = PP.pretty (show k) <> PP.pretty ":" <> PP.space <> render v
 
-renderEntryGenerous :: (Text, Value) -> Doc
-renderEntryGenerous (k, v) = PP.group $ PP.text (show k) <> PP.text ":" <> PP.line <> PP.space <> PP.space <> PP.align (render v)
+renderEntryGenerous :: (Text, Value) -> Doc ann
+renderEntryGenerous (k, v) = PP.pretty (show k) <> PP.pretty ":" <> PP.hardline <> PP.space <> PP.space <> PP.align (render v)
 
-renderRecords :: [(Text, Value)] -> Doc
+renderRecords :: [(Text, Value)] -> Doc ann
 renderRecords kvs = encloseSep2 PP.lbrace PP.rbrace PP.comma (fmap renderEntry kvs)
 
-renderElements :: [Value] -> Doc
+renderElements :: [Value] -> Doc ann
 renderElements = encloseSep2 PP.lbracket PP.rbracket PP.comma . fmap render
 
-render :: Value -> Doc
+render :: Value -> Doc ann
 render v = case v of
   Object hm -> renderRecords (HM.toList hm)
   Array vs -> renderElements (DV.toList vs)
-  Number n -> PP.text (show n)
-  Bool b -> PP.text (bool "false" "true" b)
-  String s -> PP.text (show s)
-  Null -> PP.text "null"
+  Number n -> PP.pretty (show n)
+  Bool b -> PP.pretty (bool "false" "true" b)
+  String s -> PP.pretty (show s)
+  Null -> PP.pretty "null"
 
 main :: IO ()
 main = do
@@ -76,5 +77,6 @@ main = do
   forM_ args $ \arg -> do
     json <- fmap (fromRight Null) (J.eitherDecodeFileStrict @Value arg)
 
-    PP.displayIO IO.stdout $ PP.renderPretty 0.0 120 $ render json
+    T.putStrLn $ renderStrict $ layoutSmart (LayoutOptions (AvailablePerLine 80 1)) $ render json
+    
     return ()
